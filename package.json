@@ -1,0 +1,42 @@
+{
+  "name": "universal-deployment-log-viewer",
+  "version": "1.0.0",
+  "description": "Universal, virtualized deployment log viewer for React / Next.js. Auto-parses GitLab CI, GitHub Actions, AWS, Azure DevOps, Docker Buildx, Kubernetes, Helm, Jenkins and NDJSON logs.",
+  "license": "MIT",
+  "keywords": ["logs", "log-viewer", "ci", "cd", "gitlab", "github-actions", "kubernetes", "helm", "docker", "jenkins", "react", "nextjs"],
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": { "types": "./dist/index.d.mts", "default": "./dist/index.mjs" },
+      "require": { "types": "./dist/index.d.ts", "default": "./dist/index.js" }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": ["dist", "README.md", "LICENSE", "THIRD-PARTY-LICENSES.md"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run typecheck && npm run build"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "dependencies": {
+    "@tanstack/react-virtual": "^3.10.8",
+    "ansi-to-react": "^6.1.6",
+    "lucide-react": "^0.468.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3"
+  }
+}
