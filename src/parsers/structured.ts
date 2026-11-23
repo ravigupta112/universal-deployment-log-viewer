@@ -5,7 +5,7 @@ import type { LogLevel, LogLine, LogStep, ResolvedLogSource, StepStatus } from '
 /* -------------------------------------------------------------------------- */
 
 // eslint-disable-next-line no-control-regex
-const ANSI_RE = /\u001b\[[0-9;?]*[ -/]*[@-~]/g;
+const ANSI_RE = /\u001b\[[0-9;?]*[ -/]*[@-~]|\u001b_bk;t=\d+\u0007/g;
 export function stripAnsi(s: string): string {
   return s.replace(ANSI_RE, '');
 }
@@ -233,6 +233,26 @@ export function describeText(
   if ((m = t.match(/^(?:Entering phase|Phase is)\s+(\w+)/))) return `CodeBuild entered the ${m[1]} phase.`;
   if ((m = t.match(/^Starting:\s*(.+)$/))) return `Azure Pipelines started "${m[1]}".`;
   if ((m = t.match(/^(?:##\[group\])?Run\s+(.+)$/))) return `GitHub Actions step: ${m[1]}.`;
+  if ((m = t.match(/^(ok|changed|fatal|skipping|unreachable): \[([^\]]+)\]/))) {
+    const map: Record<string, string> = {
+      ok: 'completed with no change',
+      changed: 'made a change',
+      fatal: 'FAILED',
+      skipping: 'was skipped (condition not met)',
+      unreachable: 'could not reach the host',
+    };
+    return `Ansible task ${map[m[1]]} on ${m[2]}.`;
+  }
+  if ((m = t.match(/^(\S+): (Creation|Modifications|Destruction) complete after (\S+)/))) return `Terraform finished ${m[2].toLowerCase()} of ${m[1]} after ${m[3]}.`;
+  if ((m = t.match(/^\s*# (\S+) (?:will be|must be) (.+)$/))) return `Terraform plans to ${m[2]} for ${m[1]}.`;
+  if ((m = t.match(/^Plan: (\d+) to add, (\d+) to change, (\d+) to destroy/))) return `Terraform plan summary: ${m[1]} to add, ${m[2]} to change, ${m[3]} to destroy.`;
+  if (/^Apply complete!/.test(t)) return 'Terraform applied the plan successfully.';
+  if ((m = t.match(/Error: (.+)$/)) && source === 'terraform') return `Terraform reported an error: ${m[1]}`;
+  if ((m = t.match(/exited with status (\d+)/)) && source === 'buildkite') return `A Buildkite command exited with status ${m[1]}.`;
+  if ((m = t.match(/^Build problem: (.*)$/))) return `TeamCity recorded a build problem: ${m[1]}`;
+  if ((m = t.match(/step exited with non-zero status: (\d+)/))) return `A Cloud Build step failed with exit status ${m[1]}.`;
+  if (/^(FETCHSOURCE|BUILD|PUSH|DONE|ERROR)$/.test(t) && source === 'gcp') return `Cloud Build phase: ${t}.`;
+  if ((m = t.match(/^(\S+?)(?:-\d+)? exited with code (\d+)/)) && source === 'compose') return `Compose service ${m[1]} exited with code ${m[2]}.`;
   if (/Running with gitlab-runner/.test(t)) return 'GitLab Runner picked up the job.';
   if (/Job succeeded/.test(t)) return 'The GitLab job finished successfully.';
   if (/ERROR: Job failed/.test(t)) return 'The GitLab job failed. Check the exit code and the preceding output.';
@@ -262,6 +282,8 @@ export interface LineHint {
   commandText?: string;
   description?: string;
   inputs?: Record<string, string>;
+  /** Pre-parsed payload (e.g. the JSON after `=>` in Ansible output). */
+  jsonPayload?: unknown;
 }
 
 const SKIP_KEYS = new Set(['level', 'severity', 'lvl', 'levelname', 'msg', 'message', 'time', 'timestamp', 'ts', '@timestamp']);
@@ -289,7 +311,7 @@ export function buildLine(
   if (ts.timestamp) clean = ts.rest;
 
   let inputs: Record<string, string> = {};
-  let jsonPayload: unknown;
+  let jsonPayload: unknown = hint.jsonPayload;
   let level = hint.level;
   let description = hint.description;
   let ts2: string | undefined;

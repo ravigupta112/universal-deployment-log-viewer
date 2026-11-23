@@ -16,7 +16,7 @@ import {
 } from 'universal-deployment-log-viewer';
 
 const PLATFORMS = Object.keys(mockLogs) as MockLogKey[];
-const SOURCES: LogSourceType[] = ['auto', 'gitlab', 'github', 'aws', 'azure', 'docker', 'kubernetes', 'helm', 'jenkins', 'json', 'plaintext'];
+const SOURCES: LogSourceType[] = ['auto', 'gitlab', 'github', 'aws', 'azure', 'docker', 'kubernetes', 'helm', 'jenkins', 'gcp', 'buildkite', 'teamcity', 'terraform', 'ansible', 'compose', 'json', 'plaintext'];
 
 export default function LogViewerDemoPage() {
   const [platform, setPlatform] = useState<MockLogKey>('gitlab');

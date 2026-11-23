@@ -287,6 +287,149 @@ export const jenkinsLog = join([
   'Finished: FAILURE',
 ]);
 
+
+/* ------------------------------ GCP Cloud Build ---------------------------- */
+export const gcpLog = join([
+  'starting build "3f9a1c2d-4e5f-4a6b-8c7d-9e0f1a2b3c4d"',
+  '',
+  'FETCHSOURCE',
+  'Fetching storage object: gs://acme-prod_cloudbuild/source/1763805600.tgz#1763805601234',
+  'Copying gs://acme-prod_cloudbuild/source/1763805600.tgz#1763805601234...',
+  'Operation completed over 1 objects/12.4 MiB.',
+  'BUILD',
+  'Starting Step #0 - "build"',
+  'Step #0 - "build": Already have image (with digest): gcr.io/cloud-builders/docker',
+  'Step #0 - "build": Sending build context to Docker daemon  12.4MB',
+  'Step #0 - "build": Step 1/5 : FROM node:20-alpine',
+  'Step #0 - "build": Successfully tagged gcr.io/acme-prod/webapp:1.4.2',
+  'Finished Step #0 - "build"',
+  'Starting Step #1 - "push"',
+  'Step #1 - "push": The push refers to repository [gcr.io/acme-prod/webapp]',
+  'Step #1 - "push": 1.4.2: digest: sha256:5d1c9a8b7e6f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b size: 1578',
+  'Finished Step #1 - "push"',
+  'Starting Step #2 - "deploy"',
+  'Step #2 - "deploy": Already have image (with digest): gcr.io/google.com/cloudsdktool/cloud-sdk',
+  "Step #2 - \"deploy\": ERROR: (gcloud.run.deploy) PERMISSION_DENIED: Permission 'run.services.update' denied on resource 'projects/acme-prod/locations/asia-south1/services/webapp'",
+  'Finished Step #2 - "deploy"',
+  'ERROR',
+  'ERROR: build step 2 "gcr.io/google.com/cloudsdktool/cloud-sdk" failed: step exited with non-zero status: 1',
+]);
+
+/* -------------------------------- Buildkite -------------------------------- */
+export const buildkiteLog = join([
+  '~~~ Running global environment hook',
+  '$ /etc/buildkite-agent/hooks/environment',
+  '~~~ Preparing working directory',
+  '$ cd /var/lib/buildkite-agent/builds/agent-1/acme/webapp',
+  '$ git clone -v -- git@github.com:acme/webapp.git .',
+  "Cloning into '.'...",
+  '$ git checkout -f 4f2a9c1e',
+  '--- :docker: Build image',
+  '$ docker build --tag registry.acme.io/webapp:1.4.2 --file Dockerfile .',
+  'Successfully built 5d1c9a8b7e6f',
+  '+++ :jest: Run tests',
+  '$ npm test -- --coverage',
+  'PASS  src/utils/date.test.ts',
+  'FAIL  tests/api.test.ts',
+  'Tests:       1 failed, 57 passed, 58 total',
+  '\u{1F6A8} Error: The command exited with status 1',
+  '^^^ +++',
+  'user command error: The plugin docker command hook exited with status 1',
+]);
+
+/* -------------------------------- TeamCity --------------------------------- */
+export const teamcityLog = join([
+  "[10:00:01]Build 'Webapp :: Build' #482 started",
+  "##teamcity[blockOpened name='Compile' description='Compiling sources']",
+  '[10:00:03] : [Compile] > Task :compileJava',
+  "##teamcity[message text='Using Java 17' status='NORMAL']",
+  "##teamcity[message text='Deprecated API used in Foo.java' status='WARNING']",
+  "##teamcity[blockClosed name='Compile']",
+  "##teamcity[blockOpened name='Tests' description='Running unit tests']",
+  "##teamcity[testStarted name='OrderServiceTest.createsOrder']",
+  "##teamcity[testFinished name='OrderServiceTest.createsOrder' duration='132']",
+  "##teamcity[testStarted name='PaymentTest.rejectsExpiredCard']",
+  "##teamcity[testFailed name='PaymentTest.rejectsExpiredCard' message='expected:<DECLINED> but was:<APPROVED>' details='at PaymentTest.java:57']",
+  "##teamcity[testFinished name='PaymentTest.rejectsExpiredCard' duration='88']",
+  "##teamcity[blockClosed name='Tests']",
+  "##teamcity[buildProblem description='Tests failed: 1 (1 new), passed: 241' identity='abc123']",
+  "##teamcity[buildStatus status='FAILURE' text='Tests failed: 1']",
+]);
+
+/* ---------------------------- Terraform / OpenTofu ------------------------- */
+export const terraformLog = join([
+  'Initializing the backend...',
+  'Initializing provider plugins...',
+  '- Finding hashicorp/aws versions matching "~> 5.0"...',
+  '- Installing hashicorp/aws v5.72.1...',
+  'Terraform has been successfully initialized!',
+  'aws_vpc.main: Refreshing state... [id=vpc-0a1b2c3d]',
+  '',
+  'Terraform used the selected providers to generate the following execution plan.',
+  'Terraform will perform the following actions:',
+  '',
+  '  # aws_instance.web will be created',
+  '  + resource "aws_instance" "web" {',
+  '      + ami           = "ami-0abcdef1234567890"',
+  '      + instance_type = "t3.micro"',
+  '    }',
+  '',
+  '  # aws_s3_bucket.logs will be updated in-place',
+  '  ~ resource "aws_s3_bucket" "logs" {',
+  '    }',
+  '',
+  'Plan: 1 to add, 1 to change, 0 to destroy.',
+  'aws_s3_bucket.logs: Modifying... [id=acme-logs]',
+  'aws_s3_bucket.logs: Modifications complete after 2s [id=acme-logs]',
+  'aws_instance.web: Creating...',
+  'aws_instance.web: Still creating... [10s elapsed]',
+  'aws_instance.web: Still creating... [20s elapsed]',
+  '\u2577',
+  '\u2502 Error: creating EC2 Instance: InsufficientInstanceCapacity: We currently do not have sufficient t3.micro capacity',
+  '\u2502',
+  '\u2502   with aws_instance.web,',
+  '\u2502   on main.tf line 12, in resource "aws_instance" "web":',
+  '\u2575',
+]);
+
+/* ---------------------------------- Ansible -------------------------------- */
+export const ansibleLog = join([
+  'PLAY [Configure web servers] ***************************************************',
+  '',
+  'TASK [Gathering Facts] *********************************************************',
+  'ok: [web1]',
+  'ok: [web2]',
+  '',
+  'TASK [nginx : Install nginx] ***************************************************',
+  'changed: [web1]',
+  'ok: [web2]',
+  '',
+  'TASK [nginx : Deploy config] ***************************************************',
+  'changed: [web1] => {"changed": true, "dest": "/etc/nginx/nginx.conf", "mode": "0644"}',
+  'fatal: [web2]: FAILED! => {"changed": false, "msg": "Destination directory /etc/nginx does not exist", "rc": 1}',
+  '',
+  'TASK [nginx : Restart nginx] ***************************************************',
+  'skipping: [web1]',
+  '',
+  'PLAY RECAP *********************************************************************',
+  'web1                       : ok=3    changed=2    unreachable=0    failed=0    skipped=1',
+  'web2                       : ok=2    changed=0    unreachable=0    failed=1    skipped=0',
+]);
+
+/* ------------------------------ Docker Compose ----------------------------- */
+export const composeLog = join([
+  '[+] Running 3/3',
+  ' \u2714 Network app_default  Created',
+  ' \u2714 Container app-db-1   Started',
+  ' \u2714 Container app-web-1  Started',
+  'Attaching to db-1, web-1',
+  'db-1   | 2026-11-22 10:00:01.123 UTC [1] LOG:  database system is ready to accept connections',
+  'web-1  | > webapp@2.4.0 start',
+  'web-1  | Server listening on :8080',
+  'web-1  | Error: connect ECONNREFUSED 127.0.0.1:5432',
+  'web-1 exited with code 1',
+]);
+
 /* ---------------------------------- NDJSON --------------------------------- */
 export const jsonLog = join([
   '{"timestamp":"2026-11-22T10:00:00.120Z","level":"info","stage":"validate","msg":"Starting deployment","input":{"version":"1.4.2","region":"ap-south-1"}}',
@@ -310,6 +453,12 @@ export const mockLogs: Record<MockLogKey, string> = {
   kubernetes: kubernetesLog,
   helm: helmLog,
   jenkins: jenkinsLog,
+  gcp: gcpLog,
+  buildkite: buildkiteLog,
+  teamcity: teamcityLog,
+  terraform: terraformLog,
+  ansible: ansibleLog,
+  compose: composeLog,
   json: jsonLog,
 };
 
@@ -322,6 +471,12 @@ export const mockLogLabels: Record<MockLogKey, string> = {
   kubernetes: 'Kubernetes',
   helm: 'Helm',
   jenkins: 'Jenkins',
+  gcp: 'GCP Cloud Build',
+  buildkite: 'Buildkite',
+  teamcity: 'TeamCity',
+  terraform: 'Terraform',
+  ansible: 'Ansible',
+  compose: 'Docker Compose',
   json: 'NDJSON',
 };
 

@@ -8,6 +8,12 @@ export type LogSourceType =
   | 'kubernetes'
   | 'helm'
   | 'jenkins'
+  | 'gcp'
+  | 'buildkite'
+  | 'teamcity'
+  | 'terraform'
+  | 'ansible'
+  | 'compose'
   | 'json'
   | 'plaintext';
 

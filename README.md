@@ -8,10 +8,11 @@ A Railway / Kestra-style **consolidated deployment log viewer** for React and Ne
 almost any CI/CD, container or cloud platform; it auto-detects the format, groups lines into collapsible
 stages, and renders them in a virtualized list with inline, per-line detail cards.
 
-- Auto-detection for **GitLab CI, GitHub Actions, AWS, Azure DevOps, Docker Buildx, Kubernetes, Helm, Jenkins and NDJSON**
+- Auto-detection for **GitLab CI, GitHub Actions, AWS, Azure DevOps, Docker Buildx, Kubernetes, Helm, Jenkins and NDJSON**, plus **GCP Cloud Build, Buildkite, TeamCity, Terraform/OpenTofu, Ansible and Docker Compose**
 - Handles **10,000+ lines** via `@tanstack/react-virtual` with dynamic row measurement
 - Inline line expansion (no drawer): **Description, Input Parameters, JSON Payload, Raw Output (ANSI colours)**
 - Search across stages, level filter, Expand/Collapse All, Follow Logs
+- **Copy** icons: one per stage (header) and a **Copy All** button for the entire log (ANSI codes stripped)
 - Parsers are pure functions - run them on the server or in a Web Worker
 
 ## Supported log formats
@@ -26,6 +27,12 @@ stages, and renders them in a virtualized list with inline, per-line detail card
 | Kubernetes | `[pod/name/container]` prefixes, `Normal`/`Warning` events, `kubectl apply` / rollout output, JSON & logfmt container logs | Each pod/container, Events, Apply, Rollout |
 | Helm | `Release "x" has been upgraded`, `NAME:`, `STATUS:`, `HOOKS:`, `MANIFEST:`, `NOTES:` | Release summary, Hooks, Manifest, Notes |
 | Jenkins | `[Pipeline] stage`, `[Pipeline] { (Name)`, `[Pipeline] // stage`, `[Pipeline] sh` | Each declarative stage (skipped stages detected) |
+| GCP Cloud Build | `starting build "<uuid>"`, `Step #0 - "build": ...`, `Starting Step #N` / `Finished Step #N` | Each build step (+ source fetch and build result) |
+| Buildkite | `~~~` / `---` / `+++` section headers, `$ command`, `^^^ +++` | Each log group |
+| TeamCity | `##teamcity[blockOpened name='...']` / `blockClosed`, `message`, `testFailed`, `buildProblem` | Each block (tests/problems keep their attributes as inputs) |
+| Terraform / OpenTofu | `Terraform will perform...`, `# addr will be created`, `addr: Creating...`, `Plan: N to add`, `Error:` boxes | Init, Plan, one stage per resource (with duration), Errors |
+| Ansible | `PLAY [..] ***`, `TASK [role : name] ***`, `ok:` / `changed:` / `fatal: ... FAILED! => {json}`, `PLAY RECAP` | Each task (role/play metadata, skipped detection) + recap |
+| Docker Compose | `service-1  \| message` prefixes, `[+] Running 3/3`, `Container x  Started`, `exited with code N` | One stage per service + lifecycle |
 | NDJSON / JSON / logfmt | JSON objects with `level`, `msg`/`message`, `timestamp`, `input`; `key=value` pairs | Grouped by `stage` / `step` / `service` / `component` ... |
 
 Anything else renders as a single plain-text stage.
@@ -135,7 +142,7 @@ parseLogs([{ timestamp: 1763805600000, logStreamName: 'ecs/app/abc', message: 's
 ```
 
 Individual parsers (`parseGitLab`, `parseGitHub`, `parseAzure`, `parseJenkins`, `parseDocker`, `parseKubernetes`,
-`parseHelm`, `parseAws`, `parseJsonLogs`, `parsePlaintext`) and helpers (`parseCommand`, `parseLogfmt`, `stripAnsi`,
+`parseHelm`, `parseAws`, `parseGcpCloudBuild`, `parseBuildkite`, `parseTeamCity`, `parseTerraform`, `parseAnsible`, `parseCompose`, `parseJsonLogs`, `parsePlaintext`) and helpers (`parseCommand`, `parseLogfmt`, `stripAnsi`,
 `detectLevel`) are exported too.
 
 ## API reference
@@ -158,7 +165,7 @@ Individual parsers (`parseGitLab`, `parseGitHub`, `parseAzure`, `parseJenkins`, 
 
 ### `LogSourceType`
 
-`'auto' | 'gitlab' | 'github' | 'aws' | 'azure' | 'docker' | 'kubernetes' | 'helm' | 'jenkins' | 'json' | 'plaintext'`
+`'auto' | 'gitlab' | 'github' | 'aws' | 'azure' | 'docker' | 'kubernetes' | 'helm' | 'jenkins' | 'gcp' | 'buildkite' | 'teamcity' | 'terraform' | 'ansible' | 'compose' | 'json' | 'plaintext'`
 
 ### `LogStep`
 
@@ -193,6 +200,7 @@ Individual parsers (`parseGitLab`, `parseGitHub`, `parseAzure`, `parseJenkins`, 
 ```bash
 npm install
 npm run typecheck
+npm test           # Vitest: parsers for every platform + component behaviour (jsdom)
 npm run build      # tsup -> dist/index.js, dist/index.mjs, dist/index.d.ts
 ```
 

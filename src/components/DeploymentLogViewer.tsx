@@ -28,7 +28,7 @@ import {
   X,
   XCircle,
 } from 'lucide-react';
-import { parseLogs } from '../parsers';
+import { parseLogs, stripAnsi } from '../parsers';
 import type {
   DeploymentLogViewerProps,
   LevelFilter,
@@ -64,6 +64,12 @@ const SOURCE_META: Record<ResolvedLogSource, { label: string; cls: string }> = {
   kubernetes: { label: 'K8s', cls: 'bg-indigo-500/15 text-indigo-300 ring-indigo-500/30' },
   helm: { label: 'Helm', cls: 'bg-cyan-500/15 text-cyan-300 ring-cyan-500/30' },
   jenkins: { label: 'Jenkins', cls: 'bg-rose-500/15 text-rose-300 ring-rose-500/30' },
+  gcp: { label: 'Cloud Build', cls: 'bg-blue-400/15 text-blue-200 ring-blue-400/30' },
+  buildkite: { label: 'Buildkite', cls: 'bg-lime-500/15 text-lime-300 ring-lime-500/30' },
+  teamcity: { label: 'TeamCity', cls: 'bg-pink-500/15 text-pink-300 ring-pink-500/30' },
+  terraform: { label: 'Terraform', cls: 'bg-violet-500/15 text-violet-300 ring-violet-500/30' },
+  ansible: { label: 'Ansible', cls: 'bg-red-500/15 text-red-300 ring-red-500/30' },
+  compose: { label: 'Compose', cls: 'bg-teal-500/15 text-teal-300 ring-teal-500/30' },
   json: { label: 'JSON', cls: 'bg-emerald-500/15 text-emerald-300 ring-emerald-500/30' },
   plaintext: { label: 'Text', cls: 'bg-zinc-500/15 text-zinc-300 ring-zinc-500/30' },
 };
@@ -163,16 +169,27 @@ function highlightJson(src: string): ReactNode[] {
   return out;
 }
 
-function CopyButton({ text, label = 'Copy' }: { text: string; label?: string }) {
+function CopyButton({
+  text,
+  label = 'Copy',
+  iconOnly = false,
+  title,
+}: {
+  text: string | (() => string);
+  label?: string;
+  iconOnly?: boolean;
+  title?: string;
+}) {
   const [done, setDone] = useState(false);
   const onClick = async (e: MouseEvent) => {
     e.stopPropagation();
+    const value = typeof text === 'function' ? text() : text;
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(value);
     } catch {
       try {
         const ta = document.createElement('textarea');
-        ta.value = text;
+        ta.value = value;
         document.body.appendChild(ta);
         ta.select();
         document.execCommand('copy');
@@ -188,10 +205,17 @@ function CopyButton({ text, label = 'Copy' }: { text: string; label?: string }) 
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center gap-1 rounded border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700"
+      onKeyDown={(e) => e.stopPropagation()}
+      title={title ?? label}
+      aria-label={title ?? label}
+      className={
+        iconOnly
+          ? 'inline-flex shrink-0 items-center rounded p-1 text-zinc-500 hover:bg-zinc-700 hover:text-zinc-100'
+          : 'inline-flex items-center gap-1 rounded border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700'
+      }
     >
-      {done ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
-      {done ? 'Copied' : label}
+      {done ? <Check className={`${iconOnly ? 'h-3.5 w-3.5' : 'h-3 w-3'} text-emerald-400`} /> : <Copy className={iconOnly ? 'h-3.5 w-3.5' : 'h-3 w-3'} />}
+      {!iconOnly && (done ? 'Copied' : label)}
     </button>
   );
 }
@@ -324,6 +348,11 @@ type Row =
 
 const MAX_DISPLAY_CHARS = 1200;
 
+/** Plain-text export of a stage (ANSI codes removed), including a title header. */
+function stepToText(step: LogStep): string {
+  return `=== ${step.title} (${step.status}) ===\n${step.lines.map((l) => stripAnsi(l.rawText)).join('\n')}`;
+}
+
 function LineRow({
   line,
   query,
@@ -409,6 +438,7 @@ function StepHeader({
         {filtered ? `${shown}/${step.lines.length}` : step.lines.length} lines
       </span>
       <span className="w-14 shrink-0 text-right font-mono text-xs text-zinc-500">{formatDuration(step.duration)}</span>
+      <CopyButton iconOnly title="Copy this section" text={() => stepToText(step)} />
     </div>
   );
 }
@@ -629,6 +659,11 @@ export function DeploymentLogViewer(props: DeploymentLogViewerProps) {
             {allOpen ? <ChevronsDownUp className="h-3.5 w-3.5" /> : <ChevronsUpDown className="h-3.5 w-3.5" />}
             {allOpen ? 'Collapse All' : 'Expand All'}
           </button>
+          <CopyButton
+            label="Copy All"
+            title="Copy entire log"
+            text={() => steps.map(stepToText).join('\n\n')}
+          />
           <button
             type="button"
             aria-pressed={follow}
